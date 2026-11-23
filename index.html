@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collective Carpentry — Work Tracker</title>
+  <script src="https://jsdelivr.net"></script>
+  <script>
+    // 🟢 SAFE TO EDIT ZONE 🟢
+
+    var SUPABASE_URL = "https://supabase.co";
+    var SUPABASE_KEY = "sb_publishable_7mcTdDQ5tvmuM2gf_Pa6ag_oRHfMxrC";
+    var ADMIN_PIN    = "Insert PIN here"; // <-- Jan's secret Manager PIN
+
+
+
+    var CREW_PRESETS = ["Write Name Above"];
+    // 🔴 END SAFE TO EDIT ZONE 🔴
+  </script>
+  <style>
+    :root { --bg:#12110f; --card:#1c1915; --card-alt:#24201b; --wood:#d99b52; --wood-dark:#3b2a16; --green:#4ade80; --text:#f5f3ef; --muted:#a8a29e; --border:#332e27; --danger:#f87171; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:system-ui,-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:16px; }
+    .app { width:100%; max-width:540px; display:flex; flex-direction:column; gap:14px; }
+    header { display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--border); }
+    .logo { font-size:1.2rem; font-weight:900; } .logo span { color:var(--wood); }
+    .sub { font-size:0.75rem; color:var(--muted); font-weight:600; }
+    .tabs { display:flex; gap:6px; background:var(--card); padding:4px; border-radius:10px; border:1px solid var(--border); }
+    .tab { padding:7px 12px; border-radius:7px; border:none; background:transparent; color:var(--muted); font-size:0.8rem; font-weight:800; cursor:pointer; }
+    .tab.active { background:var(--wood); color:#1c1206; }
+    .screen { display:none; flex-direction:column; gap:14px; } .screen.active { display:flex; }
+    .box { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:12px; }
+    label { font-size:0.76rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:5px; }
+    input, select, textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-size:0.95rem; font-weight:600; }
+    textarea { resize:vertical; min-height:68px; }
+    .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .chip { background:var(--card-alt); border:1px solid var(--border); color:var(--text); padding:7px 11px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .chip.selected { border-color:var(--wood); background:var(--wood-dark); color:var(--wood); }
+    .slider-head { display:flex; justify-content:space-between; align-items:center; }
+    .pct-val { color:var(--wood); font-weight:900; font-size:1.1rem; }
+    input[type="range"] { padding:0; accent-color:var(--wood); cursor:pointer; }
+    .btn { width:100%; padding:14px; border:none; border-radius:11px; font-size:0.95rem; font-weight:800; cursor:pointer; }
+    .btn-wood { background:var(--wood); color:#1c1206; }
+    .btn-sm { width:auto; padding:8px 12px; font-size:0.78rem; border-radius:8px; background:var(--card-alt); color:var(--wood); border:1px solid var(--border); font-weight:800; cursor:pointer; }
+    .btn-green { background:rgba(74,222,128,0.15); color:var(--green); border:1px solid rgba(74,222,128,0.35); }
+    .btn-red { background:transparent; color:var(--danger); border:1px solid rgba(248,113,113,0.3); padding:10px; font-size:0.82rem; }
+    .prog-card { background:var(--card-alt); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+    .prog-header { display:flex; justify-content:space-between; align-items:center; }
+    .prog-title { font-weight:900; font-size:0.95rem; color:var(--text); }
+    .prog-overall { font-weight:900; font-size:0.9rem; color:var(--green); }
+    .stage-row { display:flex; flex-direction:column; gap:4px; }
+    .stage-meta { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); font-weight:700; }
+    .bar-bg { width:100%; height:8px; background:var(--bg); border-radius:99px; overflow:hidden; border:1px solid var(--border); }
+    .bar-fill { height:100%; background:var(--wood); border-radius:99px; transition:width 0.3s; }
+    .bar-fill.done { background:var(--green); }
+    .log-item { background:var(--card-alt); border:1px solid var(--border); border-radius:11px; padding:12px; display:flex; flex-direction:column; gap:5px; }
+    .log-top { display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:800; }
+    .badge { font-size:0.72rem; padding:3px 8px; border-radius:6px; background:var(--wood-dark); color:var(--wood); font-weight:800; }
+    .log-meta { font-size:0.76rem; color:var(--muted); }
+    .log-note { font-size:0.84rem; color:var(--text); background:rgba(255,255,255,0.03); padding:8px; border-radius:7px; }
+    .row { display:flex; gap:8px; }
+    .toast { background:rgba(74,222,128,0.15); border:1px solid var(--green); color:var(--green); padding:12px; border-radius:10px; text-align:center; font-weight:800; font-size:0.88rem; display:none; }
+    .sync-pill { font-size:0.7rem; font-weight:800; padding:3px 8px; border-radius:99px; background:rgba(74,222,128,0.12); color:var(--green); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <div class="logo">COLLECTIVE <span>CARPENTRY</span></div>
+      <div class="sub">Task & Crew Progress <span id="syncStatus" class="sync-pill">LOCAL MODE</span></div>
+    </div>
+    <div class="tabs">
+      <button id="tabWorker" class="tab active" onclick="switchTab('worker')">Crew Log</button>
+      <button id="tabAdmin" class="tab" onclick="switchTab('admin')">Progress View</button>
+    </div>
+  </header>
+  <!-- WORKER LOGGING VIEW -->
+  <section id="workerScreen" class="screen active">
+    <div id="toastMsg" class="toast">✅ Progress synced for Jan!</div>
+    <div class="box">
+      <div>
+        <label>Your Name</label>
+        <input id="workerName" type="text" placeholder="Enter your name..." />
+        <div class="chip-row" id="crewChips" style="margin-top:8px;"></div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <label style="margin:0;">Job / Project</label>
+          <button type="button" class="btn-sm" onclick="toggleQuickJob()">+ New Job</button>
+        </div>
+        <select id="jobSelect"></select>
+        <div id="quickJobBox" style="display:none;margin-top:8px;flex-direction:column;gap:8px;background:var(--card-alt);padding:10px;border-radius:10px;border:1px solid var(--border);">
+          <div class="row">
+            <input id="quickJobId" type="text" placeholder="Code (e.g. CC-101)" style="max-width:130px;" />
+            <input id="quickJobName" type="text" placeholder="Enter real project name..." />
+          </div>
+          <button type="button" class="btn btn-wood" style="padding:10px;" onclick="saveQuickJob()">SAVE & SELECT JOB</button>
+        </div>
+      </div>
+
+      <div>
+        <label>Task / Build Stage</label>
+        <div class="chip-row" id="stageChips"></div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;"><label>Hours Worked</label><input id="hoursInput" type="number" step="0.5" min="0.5" max="24" value="4" /></div>
+        <div style="flex:1;"><label>Date</label><input id="dateInput" type="date" /></div>
+      </div>
+
+      <div>
+        <div class="slider-head"><label style="margin:0;">Task Completion Status</label><span id="pctDisplay" class="pct-val">50%</span></div>
+        <input id="pctSlider" type="range" min="0" max="100" step="5" value="50" oninput="document.getElementById('pctDisplay').textContent = this.value + '%'" />
+      </div>
+
+      <div>
+        <label>What Did You Finish / Any Blockers?</label>
+        <textarea id="noteInput" placeholder="e.g. Wall panels 1-8 sheathed and ready for crane..."></textarea>
+      </div>
+
+      <button id="submitBtn" class="btn btn-wood" onclick="submitLog()">UPDATE TASK PROGRESS</button>
+    </div>
+  </section>
+
+  <!-- JAN'S PIN GATE -->
+  <section id="pinScreen" class="screen">
+    <div class="box" style="text-align:center;">
+      <h2 style="color:var(--wood);">Task Progress Board</h2>
+      <p style="color:var(--muted);font-size:0.88rem;">Enter PIN to view live crew task progress across all jobs.</p>
+      <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN (default: Unknown)" style="text-align:center;font-size:1.1rem;letter-spacing:4px;" />
+      <button class="btn btn-wood" onclick="unlockAdmin()">OPEN BOARD</button>
+    </div>
+  </section>
+
+  <!-- JAN'S LIVE TASK PROGRESS DASHBOARD -->
+  <section id="adminScreen" class="screen">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label style="margin:0;">Live Task Progress by Job</label>
+        <button class="btn btn-green" style="width:auto;padding:6px 11px;font-size:0.75rem;" onclick="loadAll()">↻ REFRESH</button>
+      </div>
+      <div id="jobProgressBoard" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+
+    <div class="box">
+      <label style="margin:0;">Add New Job</label>
+      <div class="row">
+        <input id="newJobId" type="text" placeholder="CC-101" style="max-width:110px;" />
+        <input id="newJobName" type="text" placeholder="Project Name" />
+      </div>
+      <button class="btn btn-wood" onclick="addJob()">+ ADD JOB</button>
+    </div>
+
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label style="margin:0;">Detailed Crew Feed</label>
+        <button class="btn btn-green" style="width:auto;padding:6px 11px;font-size:0.75rem;" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+      <select id="adminJobFilter" onchange="renderAdminFeed()"></select>
+      <div id="adminLogsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <button class="btn btn-red" onclick="lockAdmin()">Lock Manager View</button>
+  </section>
+</div>
+<script>
+  var db = (SUPABASE_URL.indexOf("http") === 0 && window.supabase)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
+
+  var jobs = JSON.parse(localStorage.getItem("cc_jobs") || "[]");
+  var logs = JSON.parse(localStorage.getItem("cc_logs") || "[]");
+  var selectedStage = WORK_STAGES[0];
+  var adminUnlocked = false;
+
+  function init() {
+    document.getElementById("dateInput").valueAsDate = new Date();
+    var saved = localStorage.getItem("cc_last_worker");
+    if (saved) document.getElementById("workerName").value = saved;
+
+    if (db) {
+      document.getElementById("syncStatus").textContent = "☁️ LIVE CLOUD";
+    }
+
+    var cHtml = "";
+    for (var i = 0; i < CREW_PRESETS.length; i++) {
+      cHtml += '<button type="button" class="chip" onclick="document.getElementById(\'workerName\').value=\'' + CREW_PRESETS[i] + '\'">' + CREW_PRESETS[i] + '</button>';
+    }
+    document.getElementById("crewChips").innerHTML = cHtml;
+    renderStages();
+    refreshJobDropdowns();
+    loadAll();
+  }
+
+  function renderStages() {
+    var html = "";
+    for (var i = 0; i < WORK_STAGES.length; i++) {
+      var st = WORK_STAGES[i];
+      html += '<button type="button" class="chip' + (st === selectedStage ? " selected" : "") + '" onclick="selectedStage=\'' + st + '\';renderStages();">' + st + '</button>';
+    }
+    document.getElementById("stageChips").innerHTML = html;
+  }
+
+  function toggleQuickJob() {
+    var box = document.getElementById("quickJobBox");
+    box.style.display = box.style.display === "none" ? "flex" : "none";
+  }
+
+  async function saveQuickJob() {
+    var id = document.getElementById("quickJobId").value.trim().toUpperCase();
+    var name = document.getElementById("quickJobName").value.trim();
+    if (!id || !name) { alert("Enter both a Job Code and Project Name."); return; }
+    await createJobRecord(id, name);
+    document.getElementById("quickJobId").value = "";
+    document.getElementById("quickJobName").value = "";
+    document.getElementById("quickJobBox").style.display = "none";
+    document.getElementById("jobSelect").value = id;
+  }
+
+  async function createJobRecord(id, name) {
+    if (db) {
+      var res = await db.from("jobs").upsert([{ id: id, name: name }]);
+      if (res.error) alert("Job save error: " + res.error.message);
+    }
+    var exists = jobs.findIndex(function(j) { return j.id === id; });
+    if (exists !== -1) jobs[exists].name = name;
+    else jobs.unshift({ id: id, name: name });
+    localStorage.setItem("cc_jobs", JSON.stringify(jobs));
+    refreshJobDropdowns();
+  }
+
+  function refreshJobDropdowns() {
+    var sel = document.getElementById("jobSelect");
+    var prev = sel.value;
+    if (jobs.length === 0) {
+      sel.innerHTML = '<option value="">No jobs yet — tap "+ New Job" above to add one!</option>';
+    } else {
+      var opts = "";
+      for (var i = 0; i < jobs.length; i++) {
+        opts += '<option value="' + jobs[i].id + '">' + jobs[i].id + ' — ' + jobs[i].name + '</option>';
+      }
+      sel.innerHTML = opts;
+      if (prev) sel.value = prev;
+    }
+
+    var filterOpts = '<option value="ALL">All Jobs (' + logs.length + ' updates)</option>';
+    for (var j = 0; j < jobs.length; j++) {
+      filterOpts += '<option value="' + jobs[j].id + '">' + jobs[j].id + ' — ' + jobs[j].name + '</option>';
+    }
+    document.getElementById("adminJobFilter").innerHTML = filterOpts;
+  }
+
+  async function loadAll() {
+    if (db) {
+      var jRes = await db.from("jobs").select("*").order("created_at", { ascending: false });
+      if (!jRes.error && jRes.data) {
+        jobs = jRes.data.map(function(r) { return { id: r.id, name: r.name }; });
+        localStorage.setItem("cc_jobs", JSON.stringify(jobs));
+      }
+      var lRes = await db.from("work_logs").select("*").order("id", { ascending: false }).limit(200);
+      if (!lRes.error && lRes.data) {
+        logs = lRes.data.map(function(r) {
+          return { id: r.id, date: r.work_date, worker: r.worker, jobId: r.job_id, jobName: r.job_name, stage: r.stage, hours: parseFloat(r.hours), pct: r.pct, note: r.note };
+        });
+        localStorage.setItem("cc_logs", JSON.stringify(logs));
+      }
+    }
+    refreshJobDropdowns();
+    if (adminUnlocked) renderAdminDashboard();
+  }
+
+  async function submitLog() {
+    var worker = document.getElementById("workerName").value.trim();
+    var jobId = document.getElementById("jobSelect").value;
+    var hours = parseFloat(document.getElementById("hoursInput").value) || 0;
+    var date = document.getElementById("dateInput").value;
+    var pct = parseInt(document.getElementById("pctSlider").value, 10);
+    var note = document.getElementById("noteInput").value.trim();
+
+    if (!worker) { alert("Enter your name first."); return; }
+    if (!jobId) { alert("Tap '+ New Job' to add your project first."); return; }
+    if (hours <= 0) { alert("Enter valid hours."); return; }
+
+    var jobObj = jobs.find(function(j) { return j.id === jobId; }) || { id: jobId, name: jobId };
+    var btn = document.getElementById("submitBtn");
+    btn.disabled = true; btn.textContent = "SAVING...";
+
+    if (db) {
+      var ins = await db.from("work_logs").insert([{
+        work_date: date, worker: worker, job_id: jobObj.id, job_name: jobObj.name,
+        stage: selectedStage, hours: hours, pct: pct, note: note
+      }]);
+      if (ins.error) alert("Database error: " + ins.error.message);
+      await loadAll();
+    } else {
+      logs.unshift({ id: Date.now(), date: date, worker: worker, jobId: jobObj.id, jobName: jobObj.name, stage: selectedStage, hours: hours, pct: pct, note: note });
+      localStorage.setItem("cc_logs", JSON.stringify(logs));
+    }
+
+    localStorage.setItem("cc_last_worker", worker);
+    document.getElementById("noteInput").value = "";
+    btn.disabled = false; btn.textContent = "UPDATE TASK PROGRESS";
+
+    var toast = document.getElementById("toastMsg");
+    toast.style.display = "block";
+    setTimeout(function() { toast.style.display = "none"; }, 2600);
+  }
+
+  function renderAdminDashboard() {
+    var boardHtml = "";
+    if (jobs.length === 0) {
+      boardHtml = '<p style="color:var(--muted);font-size:0.85rem;">No jobs added yet. Add your first project below!</p>';
+    }
+    for (var i = 0; i < jobs.length; i++) {
+      var j = jobs[i];
+      var jLogs = logs.filter(function(l) { return l.jobId === j.id; });
+      var totalHrs = 0, sumStagePct = 0;
+      for (var k = 0; k < jLogs.length; k++) totalHrs += jLogs[k].hours;
+
+      var stagesHtml = "";
+      for (var s = 0; s < WORK_STAGES.length; s++) {
+        var stName = WORK_STAGES[s];
+        var latest = jLogs.find(function(l) { return l.stage === stName; });
+        var pct = latest ? latest.pct : 0;
+        sumStagePct += pct;
+        var who = latest ? " • " + latest.worker + " (" + latest.date + ")" : " • Not started";
+        stagesHtml += '<div class="stage-row">' +
+          '<div class="stage-meta"><span>' + stName + who + '</span><span>' + pct + '%</span></div>' +
+          '<div class="bar-bg"><div class="bar-fill' + (pct === 100 ? " done" : "") + '" style="width:' + pct + '%"></div></div>' +
+        '</div>';
+      }
+      var overallPct = Math.round(sumStagePct / WORK_STAGES.length);
+      boardHtml += '<div class="prog-card">' +
+        '<div class="prog-header"><div class="prog-title">' + j.id + ' — ' + j.name + '</div><div class="prog-overall">' + overallPct + '% • ' + totalHrs + 'h</div></div>' +
+        stagesHtml +
+      '</div>';
+    }
+    document.getElementById("jobProgressBoard").innerHTML = boardHtml;
+    renderAdminFeed();
+  }
+
+  function renderAdminFeed() {
+    var filter = document.getElementById("adminJobFilter").value;
+    var filtered = filter === "ALL" ? logs : logs.filter(function(l) { return l.jobId === filter; });
+    var container = document.getElementById("adminLogsList");
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:0.84rem;">No updates logged yet.</p>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < filtered.length; i++) {
+      var l = filtered[i];
+      html += '<div class="log-item">' +
+        '<div class="log-top"><span>' + l.worker + ' • ' + l.hours + 'h</span><span class="badge">' + l.stage + ' → ' + l.pct + '%</span></div>' +
+        '<div class="log-meta">' + l.date + ' — ' + l.jobName + '</div>' +
+        (l.note ? '<div class="log-note">' + l.note + '</div>' : '') +
+      '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  function switchTab(tab) {
+    document.getElementById("tabWorker").className = tab === "worker" ? "tab active" : "tab";
+    document.getElementById("tabAdmin").className = tab === "admin" ? "tab active" : "tab";
+    document.getElementById("workerScreen").className = "screen";
+    document.getElementById("pinScreen").className = "screen";
+    document.getElementById("adminScreen").className = "screen";
+    if (tab === "worker") document.getElementById("workerScreen").className = "screen active";
+    else if (adminUnlocked) { loadAll(); document.getElementById("adminScreen").className = "screen active"; }
+    else document.getElementById("pinScreen").className = "screen active";
+  }
+
+  function unlockAdmin() {
+    if (document.getElementById("pinInput").value.trim() === ADMIN_PIN) {
+      adminUnlocked = true; document.getElementById("pinInput").value = ""; switchTab("admin");
+    } else alert("Incorrect PIN.");
+  }
+
+  function lockAdmin() { adminUnlocked = false; switchTab("worker"); }
+
+  async function addJob() {
+    var id = document.getElementById("newJobId").value.trim().toUpperCase();
+    var name = document.getElementById("newJobName").value.trim();
+    if (!id || !name) return;
+    await createJobRecord(id, name);
+    document.getElementById("newJobId").value = "";
+    document.getElementById("newJobName").value = "";
+    renderAdminDashboard();
+  }
+
+  function exportCSV() {
+  var csv = "Date,Worker,Job ID,Project,Task Stage,Hours,Task Percent,Notes\n";
+    for (var i = 0; i < logs.length; i++) {
+      var l = logs[i];
+      csv += [l.date, '"' + l.worker + '"', l.jobId, '"' + l.jobName + '"', '"' + l.stage + '"', l.hours, l.pct + "%", '"' + (l.note || "").replace(/"/g, '""') + '"'].join(",") + "\n";
+    }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "Collective_Carpentry_Progress_" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.click();
+  }
+
+  init();
+</script>
+</body>
+</html>
